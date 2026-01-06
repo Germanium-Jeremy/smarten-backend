@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from authentication.models import UserModel as User
+from authentication.serializers import UserSerializer
 from sensors.models import UserSensors
 
 # Create your views here.
@@ -26,17 +27,12 @@ def me(request):
                for sensor in sensors
           ] if sensors.exists() else []
 
-          # Return user details and connected sensors
-          return JsonResponse({
-               'user_id': user.user_id,
-               'email': user.email,
-               'first_name': user.first_name,
-               'last_name': user.last_name,
-               'verified': user.verified,
-               'phone': user.phone,
-               'profile_image': user.profile_image if user.profile_image else None,
-               'connected_sensors': connected_sensors
-          }, status=status.HTTP_200_OK)
+          # Serialize user data with context for absolute URLs
+          user_serializer = UserSerializer(user, context={'request': request})
+          user_data = user_serializer.data
+          user_data['connected_sensors'] = connected_sensors
+
+          return JsonResponse(user_data, status=status.HTTP_200_OK)
 
      except User.DoesNotExist:
           return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
