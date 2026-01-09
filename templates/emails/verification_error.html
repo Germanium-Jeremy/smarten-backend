@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+     <head>
+          <meta charset="UTF-8" />
+          <title>Verification Failed - Smarten</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     </head>
+     <body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+          <div style="max-width: 500px; width: 90%; background: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); text-align: center;">
+
+               <!-- Warning/Error Icon -->
+               <div style="background-color: #fee2e2; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                         <circle cx="12" cy="12" r="10"></circle>
+                         <line x1="12" y1="8" x2="12" y2="12"></line>
+                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+               </div>
+
+               <h1 style="font-size: 26px; margin-bottom: 10px; color: #111827;">Verification Failed</h1>
+               
+               <p style="font-size: 16px; color: #4b5563; line-height: 1.5; margin-bottom: 30px;">
+                    We couldn't verify your email address. 
+                    <br/><br/>
+                    <span style="color: #b91c1c; font-weight: 500;">{{ error_message|default:"The verification link may be invalid or expired. Please try requesting a new link from the app." }}</span>
+               </p>
+
+               <div style="padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                    <p style="font-size: 14px; color: #9ca3af; margin: 0;">
+                         &copy; 2026 Smarten Water Management
+                    </p>
+               </div>
+          </div>
+     </body>
+</html>
