@@ -28,8 +28,9 @@ body {
 }
 
 .banner {
-     width: 100%;
+     width: 2rem;
      border-radius: 8px;
+     height: 2rem;
 }
 
 h1 {
