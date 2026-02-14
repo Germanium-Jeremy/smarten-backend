@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'goals',
     'sensors',
     'summarization',
+    'mqtt_manager',
     'rest_framework',
     'rest_framework_simplejwt',
     'main',
