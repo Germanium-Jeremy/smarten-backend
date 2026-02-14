@@ -3,7 +3,9 @@ import json
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from .models import Sensor, UserSensors
+from rest_framework import status
+from .models import Sensor, UserSensors, SensorCommand
+from mqtt_manager import mqtt_publisher
 from authentication.models import UserModel as User
 
 @api_view(['POST'])
@@ -75,3 +77,123 @@ def sensors_list_mappings(request):
 			'user_email': mapping.user.email
 		})
 	return JsonResponse({'mappings': result}, status=200)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def control_sensor(request, sensor_id):
+     """
+     Endpoint to control a specific sensor
+     Expected JSON: {"command": "ON" | "OFF"}
+     """
+     user = request.user
+     command = request.data.get('command', '').upper()
+     if command not in ['ON', 'OFF']:
+          return JsonResponse(
+               {'error': 'Invalid command. Use "ON" or "OFF".'}, 
+               status=status.HTTP_400_BAD_REQUEST
+          )
+     # Verify the sensor belongs to the user
+     try:
+          sensor = UserSensors.objects.get(id=sensor_id, user=user)
+     except UserSensors.DoesNotExist:
+          return JsonResponse(
+               {'error': 'Sensor not found or access denied.'}, 
+               status=status.HTTP_404_NOT_FOUND
+          )
+     # Create a command record
+     cmd = SensorCommand.objects.create(
+          sensor=sensor,
+          command=command,
+          status='PENDING'
+     )
+     try:
+          # Send command via MQTT
+          success, message = mqtt_publisher.publish_command(sensor.sensor.mac_address, command)
+          if success:
+               cmd.status = 'SENT'
+               cmd.save()
+               return JsonResponse({
+                    'status': 'success',
+                    'message': f'Command to turn {command} sent to sensor {sensor.sensor.mac_address}',
+                    'command_id': cmd.id
+               })
+          else:
+               cmd.status = 'FAILED'
+               cmd.response = message
+               cmd.save()
+               return JsonResponse(
+                    {'error': f'Failed to send command: {message}'}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+               )
+     except Exception as e:
+          cmd.status = 'FAILED'
+          cmd.response = str(e)
+          cmd.save()
+          print(f"Error sending command to sensor {sensor_id}: {str(e)}")
+          return JsonResponse(
+               {'error': f'Failed to send command: {str(e)}'}, 
+               status=status.HTTP_500_INTERNAL_SERVER_ERROR
+          )
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def sensor_commands(request, sensor_id):
+     """
+     Get command history for a sensor
+     """
+     try:
+          user = request.user
+          # Verify the sensor belongs to the user
+          try:
+               sensor = UserSensors.objects.get(id=sensor_id, user=user)
+          except UserSensors.DoesNotExist:
+               return JsonResponse(
+                    {'error': 'Sensor not found or access denied.'}, 
+                    status=status.HTTP_404_NOT_FOUND
+               )
+          # Get all commands for this sensor, newest first
+          commands = SensorCommand.objects.filter(sensor=sensor).order_by('-timestamp')
+          return JsonResponse({
+               'sensor_id': sensor_id,
+               'commands': [cmd.to_dict() for cmd in commands]
+          })
+     except Exception as e:
+          print(f"Error getting sensor commands: {str(e)}")
+          return JsonResponse(
+               {'error': 'An error occurred while fetching command history'}, 
+               status=status.HTTP_500_INTERNAL_SERVER_ERROR
+          )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def sensor_commands(request, sensor_id):
+     """
+     Get command history for a sensor
+     """
+     try:
+          user_id = request.user_jwt['user_id']
+          
+          # Verify the sensor belongs to the user
+          try:
+               sensor = UserSensors.objects.get(id=sensor_id, user_id=user_id)
+          except UserSensors.DoesNotExist:
+               return JsonResponse(
+                    {'error': 'Sensor not found or access denied.'}, 
+                    status=status.HTTP_404_NOT_FOUND
+               )
+          
+          # Get all commands for this sensor, newest first
+          commands = SensorCommand.objects.filter(sensor=sensor).order_by('-timestamp')
+          
+          return JsonResponse({
+               'sensor_id': sensor_id,
+               'commands': [cmd.to_dict() for cmd in commands]
+          })
+          
+     except Exception as e:
+          print(f"Error getting sensor commands: {str(e)}")
+          return JsonResponse(
+               {'error': 'An error occurred while fetching command history'}, 
+               status=status.HTTP_500_INTERNAL_SERVER_ERROR
+          )
