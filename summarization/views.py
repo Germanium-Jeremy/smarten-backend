@@ -31,6 +31,7 @@ def get_average_data(user, start_time, end_time, period_type):
           timestamp__gte=start_time,
           timestamp__lt=end_time
      )
+     print(f"Summarization: Found {sensor_data.count()} SensorData records for user {user} in period {start_time} to {end_time}")
 
      # Calculate averages and max volume
      averages = sensor_data.aggregate(
