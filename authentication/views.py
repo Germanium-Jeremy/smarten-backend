@@ -132,7 +132,7 @@ def authentication_login(request):
           if not user.check_password(password):
                return JsonResponse({'error': 'Invalid email or password.'}, status=401)
 
-          print(f"User {user.id} authenticated successfully.")
+          print(f"User {user.user_id} authenticated successfully.")
 
           user.last_login = timezone.now()
           user.save()
