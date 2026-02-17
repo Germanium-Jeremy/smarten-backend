@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'goals',
     'sensors',
+    'summarization',
     'rest_framework',
     'rest_framework_simplejwt',
     'main',
