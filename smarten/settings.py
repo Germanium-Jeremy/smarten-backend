@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'goals',
+    'sensors',
     'rest_framework',
     'rest_framework_simplejwt',
     'main',
