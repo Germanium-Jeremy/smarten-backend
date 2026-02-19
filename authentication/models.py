@@ -24,6 +24,7 @@ class UserModel(models.Model):
      first_name = models.CharField(max_length=30, help_text="User's first name")                
      last_name  = models.CharField(max_length=30, help_text="User's last name")          
      email = models.EmailField(unique=True, help_text="User's email address")
+     password = models.CharField(max_length=128, help_text="Hashed password")
      recovery_email = models.EmailField(null=True, blank=True)
      verified = models.BooleanField(default=False)
      phone = models.CharField(max_length=15, help_text="User's phone number")
