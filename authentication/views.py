@@ -67,7 +67,7 @@ def authentication_register(request):
 
           # Use the same token for verification
           verification_url = request.build_absolute_uri(reverse('verify_email') + f'?token={access_token}')
-          delete_link = request.build_absolute_uri(reverse('delete_account') + f'?token={access_token}')
+          # delete_link = request.build_absolute_uri(reverse('delete_account') + f'?token={access_token}')
 
           send_templated_email(
                subject='Verify your email',
@@ -76,8 +76,8 @@ def authentication_register(request):
                context={
                     'first_name': first_name,
                     'last_name': last_name,
-                    'verification_link': verification_url,
-                    'delete_link': delete_link
+                    'verification_link': verification_url
+                    # 'delete_link': delete_link
                }
           )
 
@@ -118,7 +118,8 @@ def authentication_verify_email(request, token=None):
 @api_view(['POST'])
 def authentication_login(request):
      try:
-          data = request.data if hasattr(request, 'data') else json.loads(request.body)
+          data = json.loads(request.body)
+          print("Login Data: ", data)
           email = data.get('email')
           password = data.get('password')
           if not email or not password:
