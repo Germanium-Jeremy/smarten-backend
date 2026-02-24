@@ -1,0 +1,35 @@
+{% load static %}
+
+<!doctype html>
+<html>
+     <head>
+          <meta charset="UTF-8" />
+          <title>Account Notice</title>
+          <link rel="stylesheet" href="{% static 'css/emails.css' %}" />
+     </head>
+     <body>
+          <div class="email-wrapper">
+               <div class="email-card">
+
+               <div class="email-header">
+                    <img src="https://yourdomain.com/logo.png" alt="Company Logo" class="logo"/>
+               </div>
+
+               <h1 class="text-danger">Important Account Notice</h1>
+
+               <p>Hello {{ first_name }} {{ last_name }},</p>
+
+               <div class="alert-box">
+                    <strong>{{ warning_message }}</strong>
+               </div>
+
+               <p>{{ warning_details }}</p>
+
+               <hr/>
+
+               <p class="footer-text">Please contact <a href="mailto:support@yourdomain.com">support@yourdomain.com</a> if you believe this message was sent in error.</p>
+
+               </div>
+          </div>
+     </body>
+</html>
