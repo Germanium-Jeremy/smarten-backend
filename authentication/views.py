@@ -1,4 +1,5 @@
 import json, shutil, os
+from django.utils import timezone
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
@@ -10,7 +11,6 @@ from .models import User
 from smarten.utils import send_templated_email
 
 
-# Create your views here.
 @api_view(['POST', 'GET'])
 def authentication_register(request):
      try:
@@ -67,6 +67,8 @@ def authentication_register(request):
 
           # Use the same token for verification
           verification_url = request.build_absolute_uri(reverse('verify_email') + f'?token={access_token}')
+          delete_link = request.build_absolute_uri(reverse('delete_account') + f'?token={access_token}')
+
           send_templated_email(
                subject='Verify your email',
                recipient=user.email,
@@ -75,6 +77,7 @@ def authentication_register(request):
                     'first_name': first_name,
                     'last_name': last_name,
                     'verification_link': verification_url,
+                    'delete_link': delete_link
                }
           )
 
@@ -107,6 +110,38 @@ def authentication_verify_email(request, token=None):
 
           return JsonResponse({'message': 'Email verified successfully'}, status=200)
 
+     except Exception as e:
+          print(e)
+          return JsonResponse({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+def authentication_login(request):
+     try:
+          data = request.data if hasattr(request, 'data') else json.loads(request.body)
+          email = data.get('email')
+          password = data.get('password')
+          if not email or not password:
+               return JsonResponse({'error': 'Email and password required.'}, status=400)
+
+          user = User.objects.filter(email=email).first()
+          if not user:
+               return JsonResponse({'error': 'Invalid email or password.'}, status=401)
+
+          if not user.check_password(password):
+               return JsonResponse({'error': 'Invalid email or password.'}, status=401)
+
+          user.last_login = timezone.now()
+          user.save()
+
+          refresh = RefreshToken.for_user(user)
+          access = str(refresh.access_token)
+
+          return JsonResponse({
+               'message': 'Login successful',
+               'token': access,
+               'refresh': str(refresh),
+          }, status=200)
      except Exception as e:
           print(e)
           return JsonResponse({'error': str(e)}, status=500)
