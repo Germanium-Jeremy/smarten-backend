@@ -1,0 +1,39 @@
+{% load static %}
+
+<!doctype html>
+<html>
+     <head>
+          <meta charset="UTF-8" />
+          <title>Exclusive Offer</title>
+          <link rel="stylesheet" href="{% static 'css/emails.css' %}" />
+     </head>
+     <body>
+          <div class="email-wrapper">
+               <div class="email-card">
+
+               <div class="email-header">
+                    <img src="https://yourdomain.com/banner.jpg" alt="Promotion Banner" class="banner"/>
+               </div>
+
+               <h1>Special Offer Just for You</h1>
+
+               <p>Hello {{ first_name }} {{ last_name }},</p>
+
+               <p>{{ advert_message }}</p>
+
+               <div class="center">
+                    <a href="{{ advert_link }}" class="btn btn-warning">Learn More</a>
+               </div>
+
+               <hr/>
+
+               <p class="footer-text">
+                    You are receiving this email because you subscribed to our updates.
+                    <br/>
+                    <a href="{{ unsubscribe_link }}">Unsubscribe</a>
+               </p>
+
+               </div>
+          </div>
+     </body>
+</html>
