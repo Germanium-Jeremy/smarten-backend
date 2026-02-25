@@ -71,7 +71,7 @@ def get_average_data(user, start_time, end_time, period_type):
 # GET AVERAGE DATA FOR PASSED HOURS
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def passed_hourd_average(request, hour):
+def summariztion_passed_hourd_average(request, hour):
      """Get average data for a passed hours of the day (0-23) for all user's sensors"""
      try:
           user = request.user
@@ -86,7 +86,7 @@ def passed_hourd_average(request, hour):
 # GET AVERAGE HOURLY DATA
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def hourly_average(request, hour):
+def summariztion_hourly_average(request, hour):
      """Get average data for a specific hour (0-23) for all user's sensors"""
      try:
           user = request.user
@@ -101,7 +101,7 @@ def hourly_average(request, hour):
 # GET AVERAGE DAILY DATA
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def daily_average(request, year, month, day):
+def summariztion_daily_average(request, year, month, day):
      """Get average data for a specific day for all user's sensors"""
      try:
           user = request.user
@@ -114,7 +114,7 @@ def daily_average(request, year, month, day):
 # GET AVERAGE MONTHLY DATA
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def monthly_average(request, year, month):
+def summariztion_monthly_average(request, year, month):
      """Get average data for a specific month for all user's sensors"""
      try:
           user = request.user
@@ -133,7 +133,7 @@ def monthly_average(request, year, month):
 # GET AVERAGE YEARLY DATA
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def yearly_average(request, year):
+def summariztion_yearly_average(request, year):
      """Get average data for a specific year for all user's sensors"""
      try:
           user = request.user
