@@ -30,16 +30,18 @@ class User(models.Model):
      @staticmethod
      def get_random_default_image():
           """
-          return the absolute path of one of the three SVGs that live
-          in static/images/.  we copy it into MEDIA_ROOT/profile_images
-          when a user is created.
+          Return the absolute path of one of the three SVGs that live
+          in static/images/. If none exist, return None.
           """
           choices = [
-               os.path.join(settings.BASE_DIR, 'static', 'images', 'default1.svg'),
-               os.path.join(settings.BASE_DIR, 'static', 'images', 'default2.svg'),
-               os.path.join(settings.BASE_DIR, 'static', 'images', 'default3.svg'),
+               os.path.join(settings.BASE_DIR, 'media', 'images', 'default1.svg'),
+               os.path.join(settings.BASE_DIR, 'media', 'images', 'default2.svg'),
+               os.path.join(settings.BASE_DIR, 'media', 'images', 'default3.svg'),
           ]
-          return random.choice(choices)
+          available = [f for f in choices if os.path.exists(f)]
+          if available:
+               return random.choice(available)
+          return None
 
      def full_name(self):
           return f"{self.first_name} {self.last_name}"
