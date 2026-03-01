@@ -36,19 +36,30 @@ def authentication_register(request):
           
           # Assign random default profile image
           default_svg = User.get_random_default_image()
-          svg_basename = os.path.basename(default_svg)
-          print(f"Selected default SVG: {svg_basename}")
-          dest_dir = os.path.join(settings.MEDIA_ROOT, 'profile_images')
-          os.makedirs(dest_dir, exist_ok=True)
-          dest_path = os.path.join(dest_dir, svg_basename)
-          shutil.copyfile(default_svg, dest_path)
+          if default_svg:
+               svg_basename = os.path.basename(default_svg)
+               print(f"Selected default SVG: {svg_basename}")
+               dest_dir = os.path.join(settings.MEDIA_ROOT, 'profile_images')
+               os.makedirs(dest_dir, exist_ok=True)
+               dest_path = os.path.join(dest_dir, svg_basename)
+               if not os.path.exists(dest_path):
+                    shutil.copyfile(default_svg, dest_path)
+               profile_image_name = svg_basename
+          else:
+               print("No default SVG found in static/images. Skipping profile image assignment.")
+               profile_image_name = ''
 
           # Create user with profile_image
-          with open(dest_path, 'rb') as img_file:
-               user = User(email=email, phone=phone, verified=False)
-               user.set_password(password)  # Hash the password
-               user.profile_image = svg_basename  # Set the profile image path
-               user.save()  # Save the user
+          user = User(
+               first_name=first_name,
+               last_name=last_name,
+               email=email,
+               phone=phone,
+               verified=False,
+               profile_image=profile_image_name
+          )
+          user.set_password(password)  # Hash the password
+          user.save()  # Save the user
 
           # Generate access and refresh tokens
           refresh_token = RefreshToken.for_user(user)
@@ -66,9 +77,6 @@ def authentication_register(request):
                     'verification_link': verification_url,
                }
           )
-
-          # Send in-app notification via channels
-          # send_user_notification(user.id, "Account Created", "Your account was successfully registered.")
 
           resp = JsonResponse({ 'message': 'User registered successfully', 'token': str(access_token), 'refresh': str(refresh_token)}, status=201)
 
