@@ -59,7 +59,7 @@ def authentication_register(request):
           send_templated_email(
                subject='Verify your email',
                recipient=user.email,
-               template_name='verification_email.txt',
+               template_name='emails/verification_email.html',
                context={
                     'first_name': first_name,
                     'last_name': last_name,
@@ -73,6 +73,31 @@ def authentication_register(request):
           resp = JsonResponse({ 'message': 'User registered successfully', 'token': str(access_token), 'refresh': str(refresh_token)}, status=201)
 
           return resp
+
+     except Exception as e:
+          print(e)
+          return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+def authentication_verify_email(request, token=None):
+     token = request.GET.get('token')
+     if not token:
+          return JsonResponse({'error': 'Missing token'}, status=400)
+
+     try:
+          # Decode the token to get the user ID
+          access_token = AccessToken(token)
+          user_id = access_token['user_id']  # Get the user ID from the token
+
+          user = User.objects.get(id=user_id)
+          if user.verified:
+               return JsonResponse({'message': 'Email already verified'}, status=200)
+
+          # Mark the user as verified
+          user.verified = True
+          user.save()
+
+          return JsonResponse({'message': 'Email verified successfully'}, status=200)
 
      except Exception as e:
           print(e)
