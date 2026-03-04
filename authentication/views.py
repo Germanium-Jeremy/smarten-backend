@@ -1,11 +1,13 @@
 import json, shutil, os
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from django.conf import settings
 from django.core.files import File
 from django.urls import reverse
 from rest_framework.decorators import api_view
 from .models import User
+from smarten.utils import send_templated_email
 
 
 # Create your views here.
@@ -35,6 +37,7 @@ def authentication_register(request):
           # Assign random default profile image
           default_svg = User.get_random_default_image()
           svg_basename = os.path.basename(default_svg)
+          print(f"Selected default SVG: {svg_basename}")
           dest_dir = os.path.join(settings.MEDIA_ROOT, 'profile_images')
           os.makedirs(dest_dir, exist_ok=True)
           dest_path = os.path.join(dest_dir, svg_basename)
@@ -48,8 +51,8 @@ def authentication_register(request):
                user.save()  # Save the user
 
           # Generate access and refresh tokens
-          access_token = generate_jwt_token(user)
-          refresh_token = generate_refresh_token(user)
+          refresh_token = RefreshToken.for_user(user)
+          access_token = str(refresh_token.access_token)
 
           # Use the same token for verification
           verification_url = request.build_absolute_uri(reverse('verify_email') + f'?token={access_token}')
@@ -65,10 +68,10 @@ def authentication_register(request):
           )
 
           # Send in-app notification via channels
-          send_user_notification(user.id, "Account Created", "Your account was successfully registered.")
+          # send_user_notification(user.id, "Account Created", "Your account was successfully registered.")
 
-          resp = JsonResponse({'message': 'User registered successfully', 'token': access_token}, status=201)
-          _set_refresh_cookie(resp, refresh_token)
+          resp = JsonResponse({ 'message': 'User registered successfully', 'token': str(access_token), 'refresh': str(refresh_token)}, status=201)
+
           return resp
 
      except Exception as e:

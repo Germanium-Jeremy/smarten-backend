@@ -34,9 +34,9 @@ class User(models.Model):
      def get_random_default_image():
           """Returns a random default image path."""
           choices = [
-               'users/images/default1.svg',
-               'users/images/default2.svg',
-               'users/images/default3.svg',
+               '/media/images/default1.svg',
+               '/media/images/default2.svg',
+               '/media/images/default3.svg',
           ]
           return random.choice(choices)
 
