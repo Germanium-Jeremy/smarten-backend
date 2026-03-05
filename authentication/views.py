@@ -1,13 +1,13 @@
 import json, shutil, os
 from django.utils import timezone
-from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from django.conf import settings
 from django.core.files import File
 from django.urls import reverse
 from rest_framework.decorators import api_view
-from .models import User
+from .models import UserModel as User
+from .serializers import RegisterSerializer, UserSerializer
 from smarten.utils import send_templated_email
 
 
@@ -98,9 +98,9 @@ def authentication_verify_email(request, token=None):
      try:
           # Decode the token to get the user ID
           access_token = AccessToken(token)
-          user_id = access_token['user_id']  # Get the user ID from the token
+          user_id_uuid = access_token['user_id']  # Get the user ID from the token
 
-          user = User.objects.get(id=user_id)
+          user = User.objects.get(user_id=user_id_uuid)
           if user.verified:
                return JsonResponse({'message': 'Email already verified'}, status=200)
 
@@ -131,6 +131,8 @@ def authentication_login(request):
 
           if not user.check_password(password):
                return JsonResponse({'error': 'Invalid email or password.'}, status=401)
+
+          print(f"User {user.id} authenticated successfully.")
 
           user.last_login = timezone.now()
           user.save()
