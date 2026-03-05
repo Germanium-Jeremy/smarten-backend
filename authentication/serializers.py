@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import UserModel as User
 import os
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -26,3 +26,9 @@ class RegisterSerializer(serializers.ModelSerializer):
           user.profile_image = basename
           user.save()
           return user
+     
+class UserSerializer(serializers.ModelSerializer):
+     id = serializers.UUIDField(source='user_id', read_only=True)
+     class Meta:
+          model = User
+          fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'profile_image']
