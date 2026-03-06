@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'sensors',
     'summarization',
     'mqtt_manager',
+    'users',
     'rest_framework',
     'rest_framework_simplejwt',
     'main',
