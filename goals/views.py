@@ -15,9 +15,15 @@ def goals_get_goals(request):
      try:
           goals = Goals.objects.get(user=user_id)
           print(f"User: {goals}")
-          return JsonResponse({'message': 'This endpoint is under construction'}, status=200)
+          return JsonResponse({'message': 'Goals fetched successfully', 'goals': goals.to_dict()}, status=200)
      except Goals.DoesNotExist:
-          return JsonResponse({'message': 'Goals not found for this user.', 'goals': []}, status=200)
+          default_goals = {
+               'daily_goals': 0.0,
+               'monthly_goals': 0.0,
+               'conservation_goal': [],
+               'cost_goal': 0.0,
+          }
+          return JsonResponse({'message': 'Goals not found for this user.', 'goals': default_goals}, status=200)
      except Exception as e:
           print(str(e))
           return JsonResponse({ "error": str(e) }, status=500)
