@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Sensor, UserSensors, SensorCommand
-from mqtt_manager import mqtt_publisher
+from mqtt_manager.mqtt_publisher import mqtt_publisher
 from authentication.models import UserModel as User
 
 @api_view(['POST'])
@@ -81,7 +81,7 @@ def sensors_list_mappings(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def control_sensor(request, sensor_id):
+def sensors_control(request, sensor_id):
      """
      Endpoint to control a specific sensor
      Expected JSON: {"command": "ON" | "OFF"}
@@ -138,7 +138,7 @@ def control_sensor(request, sensor_id):
     
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def sensor_commands(request, sensor_id):
+def sensors_commands(request, sensor_id):
      """
      Get command history for a sensor
      """
@@ -158,39 +158,6 @@ def sensor_commands(request, sensor_id):
                'sensor_id': sensor_id,
                'commands': [cmd.to_dict() for cmd in commands]
           })
-     except Exception as e:
-          print(f"Error getting sensor commands: {str(e)}")
-          return JsonResponse(
-               {'error': 'An error occurred while fetching command history'}, 
-               status=status.HTTP_500_INTERNAL_SERVER_ERROR
-          )
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def sensor_commands(request, sensor_id):
-     """
-     Get command history for a sensor
-     """
-     try:
-          user_id = request.user_jwt['user_id']
-          
-          # Verify the sensor belongs to the user
-          try:
-               sensor = UserSensors.objects.get(id=sensor_id, user_id=user_id)
-          except UserSensors.DoesNotExist:
-               return JsonResponse(
-                    {'error': 'Sensor not found or access denied.'}, 
-                    status=status.HTTP_404_NOT_FOUND
-               )
-          
-          # Get all commands for this sensor, newest first
-          commands = SensorCommand.objects.filter(sensor=sensor).order_by('-timestamp')
-          
-          return JsonResponse({
-               'sensor_id': sensor_id,
-               'commands': [cmd.to_dict() for cmd in commands]
-          })
-          
      except Exception as e:
           print(f"Error getting sensor commands: {str(e)}")
           return JsonResponse(
