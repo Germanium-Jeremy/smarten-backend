@@ -1,6 +1,7 @@
 import json, shutil, os
 from django.utils import timezone
 from django.http import JsonResponse
+from django.shortcuts import render
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from django.conf import settings
 from django.core.files import File
@@ -93,7 +94,7 @@ def authentication_register(request):
 def authentication_verify_email(request, token=None):
      token = request.GET.get('token')
      if not token:
-          return JsonResponse({'error': 'Missing token'}, status=400)
+          return render(request, 'emails/verification_error.html', {'error_message': 'Verification token is missing from the URL.'}, status=400)
 
      try:
           # Decode the token to get the user ID
@@ -102,17 +103,17 @@ def authentication_verify_email(request, token=None):
 
           user = User.objects.get(user_id=user_id_uuid)
           if user.verified:
-               return JsonResponse({'message': 'Email already verified'}, status=200)
+               return render(request, 'emails/verification_success.html')
 
           # Mark the user as verified
           user.verified = True
           user.save()
 
-          return JsonResponse({'message': 'Email verified successfully'}, status=200)
+          return render(request, 'emails/verification_success.html')
 
      except Exception as e:
           print(e)
-          return JsonResponse({'error': str(e)}, status=500)
+          return render(request, 'emails/verification_error.html', {'error_message': 'The verification link is invalid or has expired.'}, status=400)
 
 
 @api_view(['POST'])
