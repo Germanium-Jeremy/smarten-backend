@@ -5,3 +5,5 @@ djangorestframework-simplejwt
 python-dotenv
 requests
 paho-mqtt
+gunicorn
+whitenoise
