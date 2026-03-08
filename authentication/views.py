@@ -10,6 +10,8 @@ from rest_framework.decorators import api_view
 from .models import UserModel as User
 from .serializers import RegisterSerializer, UserSerializer
 from smarten.utils import send_templated_email
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
 
 
 @api_view(['POST', 'GET'])
@@ -35,30 +37,21 @@ def authentication_register(request):
           if User.objects.filter(email=email).exists():
                return JsonResponse({'error': 'Email already exists'}, status=400)
           
-          # Assign random default profile image
-          default_svg = User.get_random_default_image()
-          if default_svg:
-               svg_basename = os.path.basename(default_svg)
-               print(f"Selected default SVG: {svg_basename}")
-               dest_dir = os.path.join(settings.MEDIA_ROOT, 'profile_images')
-               os.makedirs(dest_dir, exist_ok=True)
-               dest_path = os.path.join(dest_dir, svg_basename)
-               if not os.path.exists(dest_path):
-                    shutil.copyfile(default_svg, dest_path)
-               profile_image_name = svg_basename
-          else:
-               print("No default SVG found in static/images. Skipping profile image assignment.")
-               profile_image_name = ''
-
-          # Create user with profile_image
+          # Create user object
           user = User(
                first_name=first_name,
                last_name=last_name,
                email=email,
                phone=phone,
-               verified=False,
-               profile_image=profile_image_name
+               verified=False
           )
+
+          # Assign random default profile image if possible
+          default_svg = User.get_random_default_image()
+          if default_svg:
+               with open(default_svg, 'rb') as f:
+                    user.profile_image.save(os.path.basename(default_svg), File(f), save=False)
+          
           user.set_password(password)  # Hash the password
           user.save()  # Save the user
 
@@ -82,7 +75,14 @@ def authentication_register(request):
                }
           )
 
-          resp = JsonResponse({ 'message': 'User registered successfully', 'token': str(access_token), 'refresh': str(refresh_token)}, status=201)
+          # Serialize user with context for absolute URLs
+          user_data = UserSerializer(user, context={'request': request}).data
+          resp = JsonResponse({ 
+               'message': 'User registered successfully', 
+               'token': str(access_token), 
+               'refresh': str(refresh_token),
+               'user': user_data
+          }, status=201)
 
           return resp
 
@@ -141,11 +141,68 @@ def authentication_login(request):
           refresh = RefreshToken.for_user(user)
           access = str(refresh.access_token)
 
+          # Serialize user with context for absolute URLs
+          user_data = UserSerializer(user, context={'request': request}).data
           return JsonResponse({
                'message': 'Login successful',
                'token': access,
                'refresh': str(refresh),
+               'user': user_data
           }, status=200)
      except Exception as e:
           print(e)
+          return JsonResponse({'error': str(e)}, status=500)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def authentication_update_profile(request):
+     try:
+          user = request.user
+          data = json.loads(request.body)
+          
+          user.first_name = data.get('first_name', user.first_name)
+          user.last_name = data.get('last_name', user.last_name)
+          
+          new_email = data.get('email')
+          if new_email and new_email != user.email:
+               if User.objects.filter(email=new_email).exclude(user_id=user.user_id).exists():
+                    return JsonResponse({'error': 'Email already in use by another account'}, status=400)
+               user.email = new_email
+               
+          user.save()
+          
+          serializer = UserSerializer(user, context={'request': request})
+          return JsonResponse(serializer.data, status=200)
+          
+     except Exception as e:
+          print(f"Error updating profile: {e}")
+          return JsonResponse({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def authentication_profile_change(request):
+     try:
+          user = request.user
+          if 'profile_image' not in request.FILES:
+               return JsonResponse({'error': 'No image file provided'}, status=400)
+          
+          image_file = request.FILES['profile_image']
+          
+          # This will automatically upload to Cloudinary if configured
+          user.profile_image.save(image_file.name, image_file, save=True)
+          
+          # Return full URL
+          profile_image_url = request.build_absolute_uri(user.profile_image.url) if not settings.DEBUG else user.profile_image.url
+          if settings.DEBUG and not profile_image_url.startswith('http'):
+               profile_image_url = request.build_absolute_uri(profile_image_url)
+
+          return JsonResponse({
+               'message': 'Profile image updated successfully',
+               'profile_image': profile_image_url
+          }, status=200)
+          
+     except Exception as e:
+          print(f"Error uploading image: {e}")
           return JsonResponse({'error': str(e)}, status=500)
