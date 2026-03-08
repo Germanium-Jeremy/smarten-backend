@@ -30,7 +30,7 @@ class UserModel(models.Model):
      phone = models.CharField(max_length=15, help_text="User's phone number")
      created_at = models.DateTimeField(auto_now_add=True)
      last_login = models.DateTimeField(null=True, blank=True)
-     profile_image = models.CharField(max_length=255, default='', blank=True)
+     profile_image = models.ImageField(upload_to='profile_images/', default='', blank=True)
      access_token = models.CharField(max_length=255, null=True, blank=True)
      refresh_token = models.CharField(max_length=255, null=True, blank=True)
      email_verification_code = models.CharField(max_length=6, null=True, blank=True)
