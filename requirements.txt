@@ -10,3 +10,6 @@ whitenoise
 cloudinary
 django-cloudinary-storage
 Pillow
+channels
+daphne
+channels-redis
