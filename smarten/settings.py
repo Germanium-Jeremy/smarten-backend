@@ -195,7 +195,7 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage" if not DEBUG else "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
@@ -203,8 +203,8 @@ STORAGES = {
 DEFAULT_FILE_STORAGE = STORAGES["default"]["BACKEND"]
 STATICFILES_STORAGE = STORAGES["staticfiles"]["BACKEND"]
 
-# Prevent collectstatic from failing on Render due to missing references in 3rd party CSS
-WHITENOISE_MANIFEST_STRICT = False
+# Avoid hashing errors for missing 3rd party static files
+# (ManifestStorage is stricter than our needs for this project)
 
 
 # Cloudinary Storage Configuration
