@@ -199,6 +199,10 @@ STORAGES = {
     },
 }
 
+# Legacy settings for compatibility with older libraries
+DEFAULT_FILE_STORAGE = STORAGES["default"]["BACKEND"]
+STATICFILES_STORAGE = STORAGES["staticfiles"]["BACKEND"]
+
 
 # Cloudinary Storage Configuration
 CLOUDINARY_STORAGE = {
