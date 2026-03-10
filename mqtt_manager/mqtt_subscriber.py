@@ -8,7 +8,7 @@ from django.db import transaction
 from sensors.models import UserSensors
 from summarization.models import SensorData
 from asgiref.sync import async_to_sync
-# from channels.layers import get_channel_layer
+from channels.layers import get_channel_layer
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -56,16 +56,21 @@ def on_message(client, userdata, msg):
           except (TypeError, ValueError):
                volume_val = 0.0
 
-            #    channel_layer = get_channel_layer()
-            #    async_to_sync(channel_layer.group_send)(
-            #        f"sensor_{mac}",
-            #        {"type": "sensor_data", "data": {
-            #            "mac_address": mac,
-            #            "flow_rate": flow_val,
-            #            "timestamp": ts,
-            #            "volume": volume_val,
-            #        }}
-            #    )
+          channel_layer = get_channel_layer()
+          if channel_layer:
+               async_to_sync(channel_layer.group_send)(
+                    f"sensor_{mac}",
+                    {
+                         "type": "sensor_message",
+                         "message": {
+                              "mac_address": mac,
+                              "flow_rate": flow_val,
+                              "timestamp": ts,
+                              "volume": volume_val,
+                              "status": status
+                         }
+                    }
+               )
 
           row = {"mac_address": mac, "flow": flow_val, "volume": volume_val, "status": status, "timestamp": ts}
           with buffer_lock:
