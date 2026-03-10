@@ -203,6 +203,9 @@ STORAGES = {
 DEFAULT_FILE_STORAGE = STORAGES["default"]["BACKEND"]
 STATICFILES_STORAGE = STORAGES["staticfiles"]["BACKEND"]
 
+# Prevent collectstatic from failing on Render due to missing references in 3rd party CSS
+WHITENOISE_MANIFEST_STRICT = False
+
 
 # Cloudinary Storage Configuration
 CLOUDINARY_STORAGE = {
