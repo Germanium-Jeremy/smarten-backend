@@ -74,6 +74,7 @@ def users_profile_change(request):
      try:
           user = request.user
           if 'profile_image' not in request.FILES:
+               print("No image file provided")
                return JsonResponse({'error': 'No image file provided'}, status=400)
           
           image_file = request.FILES['profile_image']
