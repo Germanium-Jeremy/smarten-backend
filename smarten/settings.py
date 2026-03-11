@@ -53,9 +53,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 INSTALLED_APPS = [
     'daphne',
-    'cloudinary_storage',
     'django.contrib.staticfiles',
-    'cloudinary',
     'corsheaders',
     'authentication',
     'django.contrib.admin',
