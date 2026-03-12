@@ -47,10 +47,10 @@ def authentication_register(request):
           )
 
           # Assign random default profile image if possible
-          default_svg = User.get_random_default_image()
-          if default_svg:
-               with open(default_svg, 'rb') as f:
-                    user.profile_image.save(os.path.basename(default_svg), File(f), save=False)
+          # default_svg = User.get_random_default_image()
+          # if default_svg:
+          #      with open(default_svg, 'rb') as f:
+          #           user.profile_image.save(os.path.basename(default_svg), File(f), save=False)
           
           user.set_password(password)  # Hash the password
           user.save()  # Save the user
