@@ -12,7 +12,9 @@ from .serializers import RegisterSerializer, UserSerializer
 from smarten.utils import send_templated_email
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
-
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+import os
 
 @api_view(['POST', 'GET'])
 def authentication_register(request):
@@ -151,4 +153,134 @@ def authentication_login(request):
           }, status=200)
      except Exception as e:
           print(e)
+          return JsonResponse({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+def authentication_google_login(request):
+     try:
+          data = json.loads(request.body)
+          token = data.get('id_token')
+
+          if not token:
+               return JsonResponse({'error': 'No ID token provided.'}, status=400)
+
+          # Verify the token with Google
+          try:
+               client_id = os.environ.get("CLIENT_ID", "")
+               idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), client_id)
+
+               if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                    raise ValueError('Wrong issuer.')
+
+               # Extract user info
+               email = idinfo['email']
+               first_name = idinfo.get('given_name', '')
+               last_name = idinfo.get('family_name', '')
+
+          except ValueError as ve:
+               print(f"Token verification failed: {ve}")
+               return JsonResponse({'error': 'Invalid Google token.'}, status=401)
+
+          # Check if user already exists
+          user = User.objects.filter(email=email).first()
+
+          if not user:
+               # Create a new user if they don't exist
+               user = User(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    phone='', # Phone might be required by model, but we don't get it from Google
+                    verified=True # Google emails are already verified
+               )
+               user.set_unusable_password()  # They use Google to login, so no normal password
+               user.save()
+          
+          # If the user exists but hasn't verified their email, we can verify it now since Google did
+          elif not user.verified:
+               user.verified = True
+               user.save()
+
+          # Generate JWT tokens
+          refresh = RefreshToken.for_user(user)
+          access = str(refresh.access_token)
+
+          # Serialize user data
+          user_data = UserSerializer(user, context={'request': request}).data
+
+          return JsonResponse({
+               'message': 'Google login successful',
+               'token': access,
+               'refresh': str(refresh),
+               'user': user_data
+          }, status=200)
+
+     except Exception as e:
+          print(f"Error in Google Login: {e}")
+          return JsonResponse({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+def authentication_google_login(request):
+     try:
+          data = json.loads(request.body)
+          token = data.get('id_token')
+
+          if not token:
+               return JsonResponse({'error': 'No ID token provided.'}, status=400)
+
+          # Verify the token with Google
+          try:
+               client_id = os.environ.get("CLIENT_ID", "")
+               idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), client_id)
+
+               if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                    raise ValueError('Wrong issuer.')
+
+               # Extract user info
+               email = idinfo['email']
+               first_name = idinfo.get('given_name', '')
+               last_name = idinfo.get('family_name', '')
+
+          except ValueError as ve:
+               print(f"Token verification failed: {ve}")
+               return JsonResponse({'error': 'Invalid Google token.'}, status=401)
+
+          # Check if user already exists
+          user = User.objects.filter(email=email).first()
+
+          if not user:
+               # Create a new user if they don't exist
+               user = User(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    phone='', # Phone might be required by model, but we don't get it from Google
+                    verified=True # Google emails are already verified
+               )
+               user.set_unusable_password()  # They use Google to login, so no normal password
+               user.save()
+          
+          # If the user exists but hasn't verified their email, we can verify it now since Google did
+          elif not user.verified:
+               user.verified = True
+               user.save()
+
+          # Generate JWT tokens
+          refresh = RefreshToken.for_user(user)
+          access = str(refresh.access_token)
+
+          # Serialize user data
+          user_data = UserSerializer(user, context={'request': request}).data
+
+          return JsonResponse({
+               'message': 'Google login successful',
+               'token': access,
+               'refresh': str(refresh),
+               'user': user_data
+          }, status=200)
+
+     except Exception as e:
+          print(f"Error in Google Login: {e}")
           return JsonResponse({'error': str(e)}, status=500)

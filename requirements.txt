@@ -12,3 +12,4 @@ Pillow
 channels
 daphne
 channels-redis
+google-auth
