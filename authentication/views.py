@@ -18,6 +18,7 @@ import os
 
 @api_view(['POST', 'GET'])
 def authentication_register(request):
+     print("Register hit")
      try:
           signupData = json.loads(request.body)
           print(f"Signup Data received: {signupData}")

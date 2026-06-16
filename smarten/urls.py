@@ -18,6 +18,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 from django.contrib import admin
+from .views import NetworkDiscovery, PortScanning
 
 urlpatterns = [
     path('authentication/', include('authentication.urls')),
@@ -26,6 +27,8 @@ urlpatterns = [
     path('summarization/', include('summarization.urls')),
     path('users/', include('users.urls')),
     path('', include('main.urls')),
+    path('scan/network/', NetworkDiscovery),
+    path('scan/port/', PortScanning),
     path('admin/', admin.site.urls),
 ]
 

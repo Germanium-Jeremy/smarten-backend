@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-w*gshobw*j6!&wv_m76$tl@i=tc=rc1t0(pf+m)n@(a646zunq')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'True') == 'False'
 
 ALLOWED_HOSTS = ["*"]
 
@@ -38,15 +38,16 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # CORS CONFIGURATIONS
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:8000",
-#     "http://127.0.0.1:8000",
-#     "http://172.19.224.1:8000",
-#     "http://169.254.190.51:8000",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:5500",
+    "http://172.19.224.1:8000",
+    "http://169.254.190.51:8000",
+]
 
 # OR allow all origins (Not recommended for production)
-CORS_ALLOW_ALL_ORIGINS = True 
+# CORS_ALLOW_ALL_ORIGINS = True 
 
 
 # Application definition
@@ -76,13 +77,15 @@ ASGI_APPLICATION = 'smarten.asgi.application'
 
 # Channel Layer Configuration for Redis
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [os.getenv('REDIS_URL', 'redis://127.0.0.1:6379')],
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")]
         },
     },
 }
+
+
 
 
 MIDDLEWARE = [

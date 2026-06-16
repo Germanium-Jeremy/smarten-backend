@@ -1,6 +1,4 @@
-import json, os
-import threading
-import time
+import json, os, asyncio, threading, time
 from collections import defaultdict, deque
 import paho.mqtt.client as mqtt
 from django.utils import timezone
@@ -21,6 +19,20 @@ buffers = defaultdict(deque)
 buffer_lock = threading.Lock()
 last_flush_time = time.time()
 
+# Store a reference to the main event loop
+_main_loop = None
+_mqtt_started = False
+
+def set_main_loop(loop):
+    global _main_loop
+    _main_loop = loop
+
+def start_mqtt_service_once():
+     global _mqtt_started
+     if not _mqtt_started:
+          threading.Thread(target=start_mqtt_service, daemon=True).start()
+          _mqtt_started = True
+
 def on_connect(client, userdata, flags, rc):
      print(f"MQTT on_connect rc={rc}")
      if rc == 0:
@@ -38,40 +50,43 @@ def on_message(client, userdata, msg):
           print("Received data: ", data)
           mac = data.get("mac_address")
           ts = data.get("timestamp")
-          # Support both flowRate and flow_rate
-          flow = data.get("flow_rate")
-          if flow is None:
-               flow = data.get("flowRate")
-          volume = data.get("volume")
-          if volume is None:
-               volume = data.get("Volume")
+          flow = data.get("flow_rate") or data.get("flowRate")
+          volume = data.get("volume") or data.get("Volume")
           status = data.get("status", "UNKNOWN")
 
           try:
-               flow_val = float(flow)
+               flow_val = float(flow) if flow is not None else 0.0
           except (TypeError, ValueError):
                flow_val = 0.0
           try:
-               volume_val = float(volume)
+               volume_val = float(volume) if volume is not None else 0.0
           except (TypeError, ValueError):
                volume_val = 0.0
 
-          channel_layer = get_channel_layer()
-          if channel_layer:
-               async_to_sync(channel_layer.group_send)(
-                    f"sensor_{mac}",
-                    {
-                         "type": "sensor_message",
-                         "message": {
+          # --- Thread‑safe WebSocket send ---
+          if mac and _main_loop is not None:
+               channel_layer = get_channel_layer()
+               if channel_layer:
+                    coro = channel_layer.group_send(
+                         f"sensor_{mac}",
+                         {
+                              "type": "sensor_message",
+                              "message": {
                               "mac_address": mac,
                               "flow_rate": flow_val,
                               "timestamp": ts,
                               "volume": volume_val,
                               "status": status
+                              }
                          }
-                    }
-               )
+                    )
+                    # Schedule the coroutine on the main event loop
+                    asyncio.run_coroutine_threadsafe(coro, _main_loop)
+                    # (Optional) add a callback to log errors:
+                    # future = asyncio.run_coroutine_threadsafe(coro, _main_loop)
+                    # future.add_done_callback(lambda f: print("Sent" if f.exception() is None else f.exception()))
 
+          # --- Buffer for DB flush ---
           row = {"mac_address": mac, "flow": flow_val, "volume": volume_val, "status": status, "timestamp": ts}
           with buffer_lock:
                buffers[mac].append(row)
@@ -79,6 +94,7 @@ def on_message(client, userdata, msg):
                     _flush_locked([mac])
      except Exception as e:
           print("on_message error:", e)
+
 
 def _flush_locked(keys=None):
      to_flush = []
