@@ -86,7 +86,6 @@ CHANNEL_LAYERS = {
             "capacity": 1500,
             "expiry": 10,
             "group_expiry": 86400,
-            "thread_buffer_size": 100,
         },
     },
 }
