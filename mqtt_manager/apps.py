@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 import threading
 import logging
+import time
 
 class MqttManagerConfig(AppConfig):
     name = 'mqtt_manager'
@@ -12,11 +13,18 @@ class MqttManagerConfig(AppConfig):
         from django.conf import settings
         if not hasattr(settings, '_mqtt_started'):
             settings._mqtt_started = True
-            try:
-                from mqtt_manager.mqtt_subscriber import mqtt_manager
-                # Start the manager in a separate thread to avoid blocking the server boot
-                t = threading.Thread(target=mqtt_manager.start, daemon=True)
-                t.start()
-                logging.getLogger(__name__).info("[✓] MQTT Manager background thread started")
-            except Exception as e:
-                logging.getLogger(__name__).error(f"[✗] Failed to start MQTT Manager in ready(): {e}")
+
+            def start_with_delay():
+                # Give Django a few seconds to fully load the AppRegistry
+                # and database connections before starting the MQTT manager
+                time.sleep(5)
+                try:
+                    from mqtt_manager.mqtt_subscriber import mqtt_manager
+                    mqtt_manager.start()
+                    logging.getLogger(__name__).info("[✓] MQTT Manager background thread started successfully after delay")
+                except Exception as e:
+                    logging.getLogger(__name__).error(f"[✗] Failed to start MQTT Manager after delay: {e}")
+
+            t = threading.Thread(target=start_with_delay, daemon=True)
+            t.start()
+            logging.getLogger(__name__).info("MQTT Manager startup scheduled (delayed to avoid AppRegistryNotReady)")
