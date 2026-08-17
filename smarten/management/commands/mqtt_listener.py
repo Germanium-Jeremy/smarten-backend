@@ -4,6 +4,7 @@ import time
 
 class Command(BaseCommand):
     help = 'Start MQTT subscriber service'
+    print("[✓] MQTT Listener command initialized")
 
     def handle(self, *args, **options):
         self.stdout.write("Starting MQTT Listener...")
