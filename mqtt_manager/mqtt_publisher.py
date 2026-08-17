@@ -53,16 +53,21 @@ class MQTTPublisher:
         try:
             if not self.client.is_connected():
                 self.connect()
-            result = self.client.publish(self.command_topic, payload, qos=1, retain=False)
+
+            # Use a device-specific topic: smarten/device/{mac_address}/command
+            # This matches the simulator and real hardware's expected topic
+            topic = f"smarten/device/{mac_address}/command"
+
+            result = self.client.publish(topic, payload, qos=1, retain=False)
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                print(f"[MQTT_PUB] Command '{command}' sent to {mac_address} on {self.command_topic}")
+                print(f"[✓] Command '{command}' sent to {mac_address} on {topic}")
                 return True, "Command sent successfully"
             else:
-                error_msg = f"[MQTT_PUB] Publish failed rc={result.rc}"
+                error_msg = f"[✗] Publish failed rc={result.rc}"
                 print(error_msg)
                 return False, error_msg
         except Exception as e:
-            error_msg = f"[MQTT_PUB] Publish error: {str(e)}"
+            error_msg = f"[✗] Publish error: {str(e)}"
             print(error_msg)
             return False, error_msg
 
