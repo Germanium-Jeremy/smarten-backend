@@ -28,9 +28,5 @@ COPY . .
 RUN mkdir -p staticfiles && \
     python manage.py collectstatic --noinput || true
 
-# Run gunicorn with daphne for async support
-CMD ["gunicorn", "smarten.asgi:application", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--workers", "2", \
-     "--bind", "0.0.0.0:8000", \
-     "--timeout", "120"]
+# Run migrations and start Gunicorn
+CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate && gunicorn smarten.asgi:application --worker-class uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:8000 --timeout 120"]
