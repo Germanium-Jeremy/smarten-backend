@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: smarten-backend
+    env: python
+    region: oregon
+    plan: standard
+
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py migrate
+      python manage.py collectstatic --noinput
+
+    startCommand: |
+      gunicorn smarten.asgi:application \\
+        --worker-class uvicorn.workers.UvicornWorker \\
+        --workers 2 \\
+        --bind 0.0.0.0:8000 \\
+        --timeout 120
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smarten-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: smarten-redis
+          property: connectionString
+      - key: DJANGO_SETTINGS_MODULE
+        value: smarten.settings
+      - key: SECRET_KEY
+        generateValue: true
+
+databases:
+  - name: smarten-db
+    plan: standard
+    postgresVersion: 15
+
+services:
+  - type: redis
+    name: smarten-redis
+    plan: standard
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+
+jobs:
+  - type: background_worker
+    name: mqtt-consumer
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py mqtt_listener
+    numInstances: 1

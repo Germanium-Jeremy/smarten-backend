@@ -14,6 +14,8 @@ from datetime import timedelta
 from pathlib import Path
 from corsheaders.defaults import default_headers
 import os
+import redis
+import dj_database_url
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,10 +31,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-w*gshobw*j6!&wv_m76$tl@i=tc=rc1t0(pf+m)n@(a646zunq')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'False'
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ["*"]
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -42,9 +43,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:5500",
-    "http://172.19.224.1:8000",
-    "http://169.254.190.51:8000",
 ]
+if RENDER_EXTERNAL_HOSTNAME:
+    CORS_ALLOWED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
 # OR allow all origins (Not recommended for production)
 # CORS_ALLOW_ALL_ORIGINS = True 
@@ -76,14 +77,31 @@ INSTALLED_APPS = [
 ASGI_APPLICATION = 'smarten.asgi.application'
 
 # Channel Layer Configuration for Redis
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")]
+            "hosts": [REDIS_URL],
+            "capacity": 1500,
+            "expiry": 10,
+            "group_expiry": 86400,
+            "thread_buffer_size": 100,
         },
     },
 }
+
+def check_redis_connectivity():
+    try:
+        r = redis.from_url(REDIS_URL)
+        r.ping()
+        print("[✓] Redis connected successfully")
+    except Exception as e:
+        print(f"[✗] Redis connection failed: {e}")
+        if not DEBUG:
+            raise RuntimeError("Redis is required in production but not accessible")
+
+check_redis_connectivity()
 
 
 
@@ -144,12 +162,21 @@ WSGI_APPLICATION = 'smarten.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if os.getenv('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -233,10 +260,9 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 # Bypass SSL certificate verification for local development only
 if DEBUG:
     import ssl
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    EMAIL_SSL_CONTEXT = ctx
-else:
-    # In production, use standard SSL verification
-    EMAIL_SSL_CONTEXT = None
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+    except AttributeError:
+        pass
+    else:
+        ssl.create_default_context = _create_unverified_https_context

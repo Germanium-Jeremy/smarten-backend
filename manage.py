@@ -2,19 +2,6 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-import ssl
-
-# Globally bypass SSL certificate verification for local development
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    # Legacy Python that doesn't verify HTTPS certificates by default
-    pass
-else:
-    # Handle environment that doesn't verify HTTPS certificates by default
-    ssl._create_default_https_context = _create_unverified_https_context
-    # Explicitly downgrade default context for all other socket creations (like smtplib)
-    ssl.create_default_context = ssl._create_unverified_context
 
 
 def main():

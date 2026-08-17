@@ -1,20 +1,18 @@
 import json, asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
-from mqtt_manager.mqtt_subscriber import set_main_loop, start_mqtt_service_once
+from mqtt_manager.mqtt_subscriber import mqtt_manager
+import json
 
 class SensorDataConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Capture the ASGI event loop
-        set_main_loop(asyncio.get_running_loop())
-        # Start the MQTT service (only once)
-        start_mqtt_service_once()
+        # Start MQTT service when first WebSocket connects
+        mqtt_manager.start()
 
         self.mac_address = self.scope['url_route']['kwargs']['mac_address']
         self.group_name = f'sensor_{self.mac_address}'
 
         # Join room group
         await self.channel_layer.group_add(self.group_name, self.channel_name)
-
         await self.accept()
 
     async def disconnect(self, close_code):
