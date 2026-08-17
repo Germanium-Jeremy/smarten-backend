@@ -170,6 +170,7 @@ if os.getenv('DATABASE_URL'):
             conn_health_checks=True,
         )
     }
+    print
 else:
     DATABASES = {
         'default': {
