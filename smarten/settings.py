@@ -170,7 +170,7 @@ if os.getenv('DATABASE_URL'):
             conn_health_checks=True,
         )
     }
-    print
+    print("[✓] Using PostgreSQL database from DATABASE_URL")
 else:
     DATABASES = {
         'default': {
