@@ -13,7 +13,7 @@ constantly==23.10.4
 cryptography==49.0.0
 daphne==4.2.2
 deprecation==2.1.0
-Django==6.0.6
+Django>=5.0,<6.1
 django-cors-headers==4.9.0
 django-supabase-storage==1.0.1
 djangorestframework==3.17.1
