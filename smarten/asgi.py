@@ -10,17 +10,23 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
 import os
 
 from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
-import sensors.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smarten.settings')
 
+# Calling get_asgi_application() first runs django.setup(), which populates
+# the app registry.  The websocket routing imports consumers that import
+# models indirectly, so it must not be imported before this point.
+django_asgi_application = get_asgi_application()
+
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from sensors.routing import websocket_urlpatterns
+
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
+    "http": django_asgi_application,
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            sensors.routing.websocket_urlpatterns
+            websocket_urlpatterns
         )
     ),
 })

@@ -1,5 +1,4 @@
 from django.core.management.base import BaseCommand
-from mqtt_manager.mqtt_subscriber import mqtt_manager
 import time
 
 class Command(BaseCommand):
@@ -7,6 +6,10 @@ class Command(BaseCommand):
     print("[✓] MQTT Listener command initialized")
 
     def handle(self, *args, **options):
+        # Import here, after Django has initialized its app registry.  The
+        # subscriber imports Django models to persist sensor readings.
+        from mqtt_manager.mqtt_subscriber import mqtt_manager
+
         self.stdout.write("Starting MQTT Listener...")
         try:
             mqtt_manager.start()
